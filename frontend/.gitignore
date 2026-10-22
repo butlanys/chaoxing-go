@@ -1,0 +1,8 @@
+# 依赖
+node_modules/
+# 构建产物 (Wails 打包时需要存在, 所以不入库)
+dist/
+# 日志
+npm-debug.log*
+yarn-error.log*
+.DS_Store

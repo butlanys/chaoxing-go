@@ -1,0 +1,27 @@
+# 构建产物
+build/bin/
+chaoxing-go
+chaoxing
+*.exe
+*.dll
+*.so
+*.dylib
+
+# 前端
+frontend/node_modules/
+frontend/dist/
+frontend/wailsjs/
+
+# 运行时数据
+cookies*.txt
+cache.json
+cache.json.bak.*
+chaoxing.log
+config.ini
+*.local.ini
+
+# 杂项
+.DS_Store
+*.swp
+.idea/
+.vscode/

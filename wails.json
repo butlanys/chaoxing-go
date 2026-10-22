@@ -1,0 +1,20 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "chaoxing-go",
+  "outputfilename": "chaoxing-go",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "butlanys",
+    "email": "butlanys@users.noreply.github.com"
+  },
+  "info": {
+    "companyName": "chaoxing-go",
+    "productName": "超星学习通助手",
+    "productVersion": "1.0.0",
+    "copyright": "GPL-3.0",
+    "comments": "超星学习通/超星尔雅/泛雅超星 全自动完成任务点 (Go 重写版, 多账号并发 + Wails GUI)"
+  }
+}
