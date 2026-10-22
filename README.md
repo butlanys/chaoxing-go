@@ -92,6 +92,19 @@ go test ./...
 python3 scripts/gen_font_fixture.py   # 生成字体交叉验证参考数据（可选）
 ```
 
+### 构建产物
+
+| 文件 | 说明 |
+| --- | --- |
+| `build/bin/chaoxing-go` | Linux GUI（本机 arm64；amd64 用 `-platform linux/amd64`） |
+| `build/bin/chaoxing-go.exe` | Windows x86-64 GUI（含 WebView2 依赖，Win10+ 自带） |
+| `build/bin/chaoxing.exe` | Windows x86-64 命令行版 |
+
+### 开发文档
+
+`docs/` 目录下是移植过程中使用的接口契约与逐模块实现说明：
+`接口契约.md`、`api实现说明-1-会话与登录.md`、`api实现说明-2-课程与视频.md`、`api实现说明-3-作业与杂项.md`。
+
 ## 使用
 
 ### GUI
