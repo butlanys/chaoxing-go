@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -389,7 +388,8 @@ func (c *Client) Login(useCookies bool) (LoginResult, error) {
 	form.Set("uname", crypto.Encrypt(c.account.Username))
 	form.Set("password", crypto.Encrypt(c.account.Password))
 	form.Set("refer", "https%3A%2F%2Fi.chaoxing.com")
-	form.Set("t", "true")
+	// 对齐 base.py 的 "t": True —— Python requests 用 str() 序列化布尔值, 线上取值为 "True"
+	form.Set("t", "True")
 	form.Set("forbidotherlogin", "0")
 	form.Set("validate", "")
 	form.Set("doubleFactorLogin", "0")
@@ -427,5 +427,16 @@ func (c *Client) Login(useCookies bool) (LoginResult, error) {
 	return LoginResult{Status: false, Msg: msg}, nil
 }
 
-// errNotLoggedIn 未登录/会话失效
-var errNotLoggedIn = errors.New("会话未登录或已失效")
+// incRollback 增加章节检测回滚次数（对齐 Python self.rollback_times += 1）。
+func (c *Client) incRollback() {
+	c.mu.Lock()
+	c.rollback++
+	c.mu.Unlock()
+}
+
+// rollbackTimes 读取章节检测回滚次数。
+func (c *Client) rollbackTimes() int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.rollback
+}

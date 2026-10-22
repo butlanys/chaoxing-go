@@ -330,7 +330,11 @@ func (r *Runner) processChapter(course htmlx.Course, point htmlx.Point) ChapterR
 	// 随机等待，避免请求过快
 	r.client.RateLimitRandom(0, 0.2)
 
-	jobs, info := r.client.JobList(course, point)
+	jobs, info, err := r.client.JobList(course, point)
+	if err != nil {
+		r.log.Error("读取章节任务点失败: %v", err)
+		return ChapterError
+	}
 	if info.NotOpen {
 		return ChapterNotOpen
 	}

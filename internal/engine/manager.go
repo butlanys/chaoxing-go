@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
@@ -120,6 +121,8 @@ type AccountTask struct {
 	Options    Options
 	Tiku       tiku.Provider
 	Notify     notify.Notifier
+	// Transport 可选自定义传输层，透传给 api.Client（代理/拦截器/测试注入）
+	Transport http.RoundTripper
 }
 
 // Manager 多账号并发调度器
@@ -226,6 +229,7 @@ func (m *Manager) runAccount(t AccountTask) error {
 		NotOpenAction:   opt.NotOpenAction,
 		CookieFile:      t.CookieFile,
 		AskFunc:         m.hooks.AskFunc,
+		Transport:       t.Transport,
 	}
 
 	cli := api.NewClient(t.Account, t.Tiku, log, apiOpt)

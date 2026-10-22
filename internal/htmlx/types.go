@@ -124,4 +124,3 @@ type RecordItem struct {
 //	DecodeQuestions(htmlText string, fd FontDecoder) WorkForm
 //	DecodeWorkRecordList(htmlText string) []RecordItem
 //	DecodeWorkRecordDetail(htmlText string) []RecordQuestion
-

@@ -18,4 +18,3 @@ type logger interface {
 // New（依据 [notification] 配置构造通知服务；未配置时返回 Noop）的实现见 notify.go：
 //
 //	func New(conf map[string]string, log logger) Notifier
-

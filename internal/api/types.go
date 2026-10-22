@@ -79,7 +79,10 @@ type Options struct {
 	CookieFile      string        // 每账号独立 cookie 文件路径
 	Timeout         time.Duration // 单请求超时，默认 5s
 	Proxy           string        // 可选 HTTP 代理
-	NotOpenAction   string        // retry|ask|continue
+	// Transport 可选自定义传输层；非空时覆盖内部构造的 http.Transport
+	// （用于接入代理、拦截器，或在测试中把请求导向假服务端）
+	Transport     http.RoundTripper
+	NotOpenAction string // retry|ask|continue
 	// AskFunc "ask" 模式回调；返回 false 表示停止，nil 时按 retry 处理
 	AskFunc func(prompt string) bool
 }

@@ -30,7 +30,13 @@ var forbiddenRetryBackoff = func() time.Duration {
 	return time.Duration(randFloat(2, 4) * float64(time.Second))
 }
 
+// videoLogLimit 视频进度上报前的限速，
+// 对齐 Python self.video_log_limiter.limit_rate(random_time=True, random_max=2)。
+// 声明为变量，便于单元测试注入零等待。
+var videoLogLimit = func(c *Client) { c.videoRL.Limit(true, 0, 2) }
+
 // captchaRetryInterval 验证码通关失败后的重试间隔（对齐 Python time.sleep(2)）。
+// 声明为变量，便于单元测试注入零等待。
 var captchaRetryInterval = 2 * time.Second
 
 // reRtFromOtherInfo 对齐 base.py: r"-rt_([1d])"
@@ -155,7 +161,7 @@ func (c *Client) videoProgressLog(course htmlx.Course, job htmlx.Job, info htmlx
 		headers = consts.VideoHeaders
 	}
 
-	c.videoRL.Limit(true, 0, 2)
+	videoLogLimit(c)
 
 	if strings.Contains(job.OtherInfo, "courseId") {
 		// 原版此处 raise RuntimeError("this is not possible")，Go 版返回非 200 状态由调用方判定失败
@@ -226,6 +232,7 @@ func (c *Client) videoProgressLog(course htmlx.Course, job htmlx.Job, info htmlx
 	}
 
 	var res *httpResult
+	var err error
 	if rt != "" {
 		c.log.Trace("Got rt: %s", rt)
 		job.Rt = rt

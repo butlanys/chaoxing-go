@@ -99,6 +99,14 @@ func (j *flatJar) all() map[string]string {
 
 // newHTTPClient 构造带 cookie jar 与超时的 HTTP 客户端
 func newHTTPClient(jar http.CookieJar, opt Options) *http.Client {
+	timeout := opt.Timeout
+	if timeout <= 0 {
+		timeout = consts.DefaultTimeout
+	}
+	// 调用方指定了传输层时直接使用（代理、拦截器、测试注入）
+	if opt.Transport != nil {
+		return &http.Client{Transport: opt.Transport, Jar: jar, Timeout: timeout}
+	}
 	tr := &http.Transport{
 		MaxIdleConns:        32,
 		MaxIdleConnsPerHost: 16,
@@ -111,11 +119,18 @@ func newHTTPClient(jar http.CookieJar, opt Options) *http.Client {
 			tr.Proxy = http.ProxyURL(pu)
 		}
 	}
-	timeout := opt.Timeout
-	if timeout <= 0 {
-		timeout = consts.DefaultTimeout
-	}
 	return &http.Client{Transport: tr, Jar: jar, Timeout: timeout}
+}
+
+// SetTransport 替换底层 RoundTripper。
+//
+// 用于上层注入自定义传输层（例如集成测试里把请求导向本地假超星服务端，
+// 或接入自定义代理/拦截器）。传 nil 表示不做变更。
+func (c *Client) SetTransport(rt http.RoundTripper) {
+	if rt == nil {
+		return
+	}
+	c.http.Transport = rt
 }
 
 // CookieString 导出当前会话 cookie 为 "k=v; k=v" 形式

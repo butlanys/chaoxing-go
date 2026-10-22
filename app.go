@@ -56,17 +56,18 @@ type AccountInput struct {
 
 // AccountView 返回给前端的账号视图（不含明文密码）
 type AccountView struct {
-	ID          string    `json:"id"`
-	Username    string    `json:"username"`
-	Remark      string    `json:"remark"`
-	Enabled     bool      `json:"enabled"`
-	UseCookies  bool      `json:"use_cookies"`
-	HasPassword bool      `json:"has_password"`
-	HasCookies  bool      `json:"has_cookies"`
-	CourseIDs   []string  `json:"course_ids"`
-	LastLogin   time.Time `json:"last_login"`
-	LastStatus  string    `json:"last_status"`
-	Label       string    `json:"label"`
+	ID          string   `json:"id"`
+	Username    string   `json:"username"`
+	Remark      string   `json:"remark"`
+	Enabled     bool     `json:"enabled"`
+	UseCookies  bool     `json:"use_cookies"`
+	HasPassword bool     `json:"has_password"`
+	HasCookies  bool     `json:"has_cookies"`
+	CourseIDs   []string `json:"course_ids"`
+	// LastLogin 用 RFC3339 字符串，避免 Wails 绑定生成器无法处理 time.Time
+	LastLogin  string `json:"last_login"`
+	LastStatus string `json:"last_status"`
+	Label      string `json:"label"`
 }
 
 // RunRequest 启动刷课任务的请求
@@ -192,6 +193,10 @@ func (a *App) AppInfo() map[string]string {
 // ---------- 账号管理 ----------
 
 func toView(sa store.Account) AccountView {
+	last := ""
+	if !sa.LastLogin.IsZero() {
+		last = sa.LastLogin.Format(time.RFC3339)
+	}
 	return AccountView{
 		ID:          sa.ID,
 		Username:    sa.Username,
@@ -201,7 +206,7 @@ func toView(sa store.Account) AccountView {
 		HasPassword: sa.Password != "",
 		HasCookies:  strings.TrimSpace(sa.Cookies) != "",
 		CourseIDs:   sa.CourseIDs,
-		LastLogin:   sa.LastLogin,
+		LastLogin:   last,
 		LastStatus:  sa.LastStatus,
 		Label:       labelOf(sa),
 	}
