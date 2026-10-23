@@ -62,6 +62,10 @@ chaoxing-go/
 go install github.com/wailsapp/wails/v2/cmd/wails@latest
 ```
 
+> 字体映射表（`internal/font/data/font_map_table.json`，1.5MB）已通过 `//go:embed` 编进二进制，
+> 发布出去的单文件即可解密超星加密字体。若想自行更新映射表，把新的
+> `resource/font_map_table.json` 放到可执行文件旁边即可覆盖内嵌版本。
+
 ### Linux
 
 Debian 13 (trixie) 起只提供 webkit2gtk-4.1，**必须**带 `webkit2_41` 构建标签：

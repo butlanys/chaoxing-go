@@ -85,13 +85,16 @@ func Decrypt(ciphertext string) (string, error) {
 
 // VideoEncMD5Input 返回 VideoEnc 参与 md5 的原始字符串，仅用于测试与自检。
 // 逐字对齐 api/base.py:656 get_enc。
+//
+// 其中的 consts.VideoEncSalt 是目标平台的公开协议常量（硬编码在超星播放器前端 JS 中），
+// 不是本项目凭据，详见 internal/consts/consts.go 的说明。
 func VideoEncMD5Input(clazzID, userID, jobID, objectID string, playingTime, duration int) string {
-	return fmt.Sprintf("[%s][%s][%s][%s][%d][d_yHJ!$pdA~5][%d][0_%d]",
-		clazzID, userID, jobID, objectID, playingTime*1000, duration*1000, duration)
+	return fmt.Sprintf("[%s][%s][%s][%s][%d][%s][%d][0_%d]",
+		clazzID, userID, jobID, objectID, playingTime*1000, consts.VideoEncSalt, duration*1000, duration)
 }
 
 // VideoEnc 计算视频进度上报的 enc 参数（md5 hex）。
-// 对齐 Python: md5(f"[{clazzId}][{userid}][{jobid}][{objectId}][{playingTime*1000}][d_yHJ!$pdA~5][{duration*1000}][0_{duration}]")
+// 对齐 Python: md5(f"[{clazzId}][{userid}][{jobid}][{objectId}][{playingTime*1000}][{salt}][{duration*1000}][0_{duration}]")
 func VideoEnc(clazzID, userID, jobID, objectID string, playingTime, duration int) string {
 	sum := md5.Sum([]byte(VideoEncMD5Input(clazzID, userID, jobID, objectID, playingTime, duration)))
 	return hex.EncodeToString(sum[:])

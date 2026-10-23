@@ -1,6 +1,7 @@
 package font
 
 import (
+	"bytes"
 	"encoding/base64"
 	"os"
 	"path/filepath"
@@ -252,12 +253,39 @@ func TestLoadTableExplicitPath(t *testing.T) {
 	}
 }
 
-// TestLoadTableNotFound 所有候选路径都不存在时返回 error。
-func TestLoadTableNotFound(t *testing.T) {
+// TestLoadTableFallsBackToEmbedded 所有磁盘候选路径都不存在时，回退到编译期内嵌的映射表。
+//
+// 这是「发布出去的单个可执行文件也能解密超星加密字体」的保证：
+// 用户不需要额外附带 resource/font_map_table.json。
+func TestLoadTableFallsBackToEmbedded(t *testing.T) {
 	dir := t.TempDir()
 	t.Chdir(dir) // 让 ./resource 与 ../../resource 都落到临时目录下
-	if _, err := LoadTable(filepath.Join(dir, "missing.json")); err == nil {
-		t.Errorf("期望返回 error")
+
+	tbl, err := LoadTable(filepath.Join(dir, "missing.json"))
+	if err != nil {
+		t.Fatalf("磁盘无映射表时应回退到内嵌数据, 实际报错: %v", err)
+	}
+	if tbl.Len() < 20000 {
+		t.Errorf("内嵌映射表条目数异常: %d", tbl.Len())
+	}
+	if !strings.HasPrefix(tbl.Path(), "<embedded:") {
+		t.Errorf("Path() = %q, 期望内嵌来源标识", tbl.Path())
+	}
+	// 内嵌数据必须是完整可用的：抽查一个已知字形
+	if h, ok := tbl.FindHash("A"); !ok || h != "6fca21acbe6393791a0e7096eaa49265" {
+		t.Errorf("内嵌表 FindHash(A) = %q(%v)", h, ok)
+	}
+}
+
+// TestEmbeddedTableMatchesDiskFile 内嵌数据与仓库中的 data/font_map_table.json 完全一致。
+func TestEmbeddedTableMatchesDiskFile(t *testing.T) {
+	onDisk, err := os.ReadFile(filepath.Join("data", TableName))
+	if err != nil {
+		t.Fatalf("读取 data/%s 失败: %v", TableName, err)
+	}
+	if !bytes.Equal(onDisk, embeddedTableJSON) {
+		t.Errorf("内嵌数据与 data/%s 不一致 (磁盘 %d 字节, 内嵌 %d 字节)",
+			TableName, len(onDisk), len(embeddedTableJSON))
 	}
 }
 

@@ -1,0 +1,24 @@
+# gitleaks 配置
+#
+# 加白理由见 docs/密钥与敏感信息说明.md。
+# 本项目没有任何属于开发者/用户的凭据入库；被命中的两处是目标平台
+# （超星学习通）的公开协议常量，硬编码在其前端 JS 中，且同样明文存在于
+# 上游开源项目 Samueli924/chaoxing。移除它们会直接破坏登录与视频进度上报。
+#
+# 这里只做**路径级**加白，不在配置里重复写常量值本身（避免配置文件自己又成为命中项）。
+
+title = "chaoxing-go gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "超星平台公开协议常量的定义处与说明文档（非本项目凭据）"
+paths = [
+  '''^internal/consts/consts\.go$''',
+  '''^docs/接口契约\.md$''',
+  '''^docs/密钥与敏感信息说明\.md$''',
+  '''^\.gitleaks\.toml$''',
+  '''^\.gitguardian\.yaml$''',
+  '''^scripts/scan_secrets\.py$''',
+]

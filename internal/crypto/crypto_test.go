@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/butlanys/chaoxing-go/internal/consts"
 )
 
 // pythonGolden 由 Python 参考实现(pyaes + api/cipher.py)实际运行得到，用作字节级对齐基准。
@@ -23,7 +25,7 @@ var pythonGolden = []struct {
 	{"差一字节满块", "0123456789abcde", "FAiK0B2hDQz0gNMdoOoKlg=="},
 	{"长串", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		"YaUb/y6VdOUq8BImCZkv2EvFxe2b2JSWYe11G/GzkPIrXoqmOrf5OXGdlEheNBJgjiINhABlh/Hl2pCCnqn0fOfJLm0/yJ40FFY+MSf0biA="},
-	{"密钥本身", "u2oh6Vu^HWe4_AES", "ulZQcVrOacDUDizP11W0E4FFPgELu/nYgZFwzeSLFj4="},
+	{"密钥本身", consts.AESKey, "ulZQcVrOacDUDizP11W0E4FFPgELu/nYgZFwzeSLFj4="},
 	{"含康熙部首", "密文解码测试：康熙部首⼀⼁⼂", "ScdABwjVUyOgeiwanqH7cp6t6eTtLgefQHU6UjT+lLipixWaYAPUT1YZpQOguTpx"},
 }
 
@@ -54,7 +56,7 @@ func TestEncryptDecryptRoundTrip(t *testing.T) {
 // 用 crypto/aes 手工按 CBC 规则逐块解密（不依赖 crypto/cipher 的 CBC 实现），
 // 检查密文分组、IV 链接与 PKCS7 填充是否都正确。
 func TestEncryptBlockAlignment(t *testing.T) {
-	key := []byte("u2oh6Vu^HWe4_AES") // 与 consts.AESKey 逐字一致
+	key := []byte(consts.AESKey) // 平台协议常量，见 internal/consts/consts.go
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		t.Fatal(err)
@@ -102,7 +104,7 @@ func TestEncryptBlockAlignment(t *testing.T) {
 // TestEncryptManualCBC 用 crypto/aes 手工按 CBC 规则逐块加密（不依赖 crypto/cipher 的 CBC 实现），
 // 独立复算密文，确认分组链接与 IV 取值都正确。
 func TestEncryptManualCBC(t *testing.T) {
-	key := []byte("u2oh6Vu^HWe4_AES") // 与 consts.AESKey 逐字一致
+	key := []byte(consts.AESKey) // 平台协议常量，见 internal/consts/consts.go
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		t.Fatal(err)
@@ -135,12 +137,12 @@ func TestEncryptManualCBC(t *testing.T) {
 // TestVideoEncMD5Input 校验参与 md5 的原始串逐字与 Python 版一致。
 func TestVideoEncMD5Input(t *testing.T) {
 	got := VideoEncMD5Input("123456", "7890123", "987654", "111222333", 125, 500)
-	want := "[123456][7890123][987654][111222333][125000][d_yHJ!$pdA~5][500000][0_500]"
+	want := "[123456][7890123][987654][111222333][125000][" + consts.VideoEncSalt + "][500000][0_500]"
 	if got != want {
 		t.Fatalf("VideoEncMD5Input = %q, 期望 %q", got, want)
 	}
 	got2 := VideoEncMD5Input("aaa", "bbb", "ccc", "ddd", 0, 0)
-	want2 := "[aaa][bbb][ccc][ddd][0][d_yHJ!$pdA~5][0][0_0]"
+	want2 := "[aaa][bbb][ccc][ddd][0][" + consts.VideoEncSalt + "][0][0_0]"
 	if got2 != want2 {
 		t.Fatalf("VideoEncMD5Input = %q, 期望 %q", got2, want2)
 	}

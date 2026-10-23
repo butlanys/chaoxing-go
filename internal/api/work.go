@@ -50,7 +50,8 @@ var (
 	fontTable     *font.Table
 )
 
-// loadFontTable 懒加载 resource/font_map_table.json；失败返回 nil。
+// loadFontTable 懒加载字体映射表；优先磁盘 resource/font_map_table.json，
+// 找不到时回退到编译期内嵌的映射表（保证单文件可执行程序开箱可用）。失败返回 nil。
 func loadFontTable() *font.Table {
 	fontTableOnce.Do(func() {
 		t, err := font.LoadTable("resource/font_map_table.json")

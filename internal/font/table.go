@@ -25,6 +25,7 @@ type Table struct {
 //  2. <可执行文件目录>/resource/font_map_table.json
 //  3. ./resource/font_map_table.json
 //  4. ../../resource/font_map_table.json
+//  5. 编译期内嵌的映射表（//go:embed，保证单文件可执行程序开箱可用）
 //
 // 候选文件不存在时继续尝试下一个；一旦命中但内容非法，直接返回错误（与原版一致，不做静默兜底）。
 func LoadTable(path string) (*Table, error) {
@@ -38,6 +39,14 @@ func LoadTable(path string) (*Table, error) {
 		t, err := loadTableFile(p)
 		if err != nil {
 			return nil, fmt.Errorf("加载字体映射表失败: %s - %w", p, err)
+		}
+		return t, nil
+	}
+	// 磁盘上都没有 -> 回退到内嵌映射表
+	if len(embeddedTableJSON) > 0 {
+		t, err := loadTableBytes(embeddedTableJSON, embeddedTableSource)
+		if err != nil {
+			return nil, fmt.Errorf("加载内嵌字体映射表失败: %w", err)
 		}
 		return t, nil
 	}
@@ -80,9 +89,14 @@ func loadTableFile(path string) (*Table, error) {
 	if err != nil {
 		return nil, err
 	}
+	return loadTableBytes(raw, path)
+}
+
+// loadTableBytes 解析映射表内容；source 仅用于错误信息与 Path() 展示。
+func loadTableBytes(raw []byte, source string) (*Table, error) {
 	keys, values, err := decodeOrderedStringMap(raw)
 	if err != nil {
-		return nil, fmt.Errorf("解析 %s 失败: %w", path, err)
+		return nil, fmt.Errorf("解析 %s 失败: %w", source, err)
 	}
 	charMap := make(map[string]string, len(keys))
 	hashMap := make(map[string]string, len(keys))
@@ -93,7 +107,7 @@ func loadTableFile(path string) (*Table, error) {
 		// 因此这里用流式解析保留 JSON 键顺序，避免 Go map 随机遍历带来的不确定性。
 		hashMap[values[i]] = k
 	}
-	return &Table{charMap: charMap, hashMap: hashMap, path: path}, nil
+	return &Table{charMap: charMap, hashMap: hashMap, path: source}, nil
 }
 
 // decodeOrderedStringMap 按 JSON 中的原始顺序解析 {"k": "v", ...}，返回键值切片。
