@@ -20,6 +20,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/butlanys/chaoxing-go/internal/ocr"
 )
 
 // 超星验证码相关常量，与 api/captcha.py 逐字一致
@@ -77,22 +79,53 @@ func get(conf map[string]string, key string) string {
 	return ""
 }
 
-// New 依据配置构造 Solver：conf["ocr_url"] 非空时使用 HTTP OCR 服务，否则返回 DisabledSolver
+// LocalSolver 用内嵌的 ddddocr 模型在本地识别验证码。
+//
+// 纯 Go 实现（internal/ocr），模型随二进制内嵌，不需要 onnxruntime 动态库、
+// 不需要 Python、不需要外部 OCR 服务。这是 Python 原版的默认行为
+// （原版直接用本地 ddddocr 库）。
+type LocalSolver struct {
+	r   *ocr.Recognizer
+	log logger
+}
+
+// Solve 在本地识别验证码图片
+func (s *LocalSolver) Solve(img []byte) (string, error) {
+	if len(img) == 0 {
+		return "", errors.New("验证码图片为空，无法识别")
+	}
+	res, err := s.r.Recognize(img)
+	if err != nil {
+		return "", fmt.Errorf("本地验证码识别失败: %w", err)
+	}
+	return res.Text, nil
+}
+
+// New 依据配置构造 Solver。
+//
+// 优先级与 Python 原版一致：默认使用**本地内嵌模型**识别；只有当显式配置了
+// ocr_url 时才改用 HTTP OCR 服务（保留给需要集中式 OCR 的部署）。
 func New(conf map[string]string, log logger) Solver {
 	if log == nil {
 		log = nopLogger{}
 	}
-	ocrURL := get(conf, "ocr_url")
-	if ocrURL == "" {
-		log.Warn("未配置 OCR 服务(ocr_url)，自动验证码识别将不可用。如遇403限制请在浏览器端手动完成验证。")
+	// 显式配置了 ocr_url 时沿用 HTTP 服务
+	if ocrURL := get(conf, "ocr_url"); ocrURL != "" {
+		log.Info("已初始化 HTTP OCR 验证码识别服务: %s", ocrURL)
+		return &HTTPOcrSolver{
+			url:    ocrURL,
+			client: &http.Client{Timeout: 10 * time.Second},
+			log:    log,
+		}
+	}
+	// 默认走本地内嵌模型
+	r, err := ocr.New()
+	if err != nil {
+		log.Error("本地验证码模型加载失败: %v；如遇403限制请在浏览器端手动完成验证。", err)
 		return DisabledSolver{}
 	}
-	log.Info("已初始化 HTTP OCR 验证码识别服务: %s", ocrURL)
-	return &HTTPOcrSolver{
-		url:    ocrURL,
-		client: &http.Client{Timeout: 10 * time.Second},
-		log:    log,
-	}
+	log.Info("已启用内嵌的本地验证码识别（ddddocr 模型，纯 Go 实现，字符集 [0-9a-zA-Z]）")
+	return &LocalSolver{r: r, log: log}
 }
 
 // HTTPOcrSolver 通过 HTTP OCR 服务识别验证码：

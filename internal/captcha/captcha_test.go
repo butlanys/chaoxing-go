@@ -124,18 +124,23 @@ func newTestCaptcha(t *testing.T, srv *httptest.Server, solver Solver, log logge
 	return c
 }
 
-// TestNewWithoutOcrURL 未配置 ocr_url 时返回 DisabledSolver
+// TestNewWithoutOcrURL 未配置 ocr_url 时返回本地内嵌模型识别器。
+//
+// 这是相对早期版本的行为变更：原先未配置 ocr_url 会退化为 DisabledSolver
+// （对应 Python 原版未安装 ddddocr 的情形）。现在模型随二进制内嵌，
+// 默认就走本地识别，与 Python 原版安装好 ddddocr 后的行为一致。
 func TestNewWithoutOcrURL(t *testing.T) {
 	log := &captureLogger{}
 	s := New(map[string]string{"provider": "TikuYanxi"}, log)
-	if _, ok := s.(DisabledSolver); !ok {
-		t.Fatalf("期望 DisabledSolver, 实际 %T", s)
+	if _, ok := s.(*LocalSolver); !ok {
+		t.Fatalf("期望 *LocalSolver, 实际 %T", s)
 	}
-	if _, err := s.Solve([]byte("img")); !errors.Is(err, ErrUnavailable) {
-		t.Fatalf("Solve 应返回 ErrUnavailable, 实际 %v", err)
+	// 本地识别器对空输入应报错，而不是 panic 或返回 ErrUnavailable
+	if _, err := s.Solve(nil); err == nil {
+		t.Fatal("空输入应返回错误")
 	}
-	if len(log.warns) == 0 {
-		t.Error("应打 Warn 日志")
+	if len(log.infos) == 0 {
+		t.Error("应打 Info 日志说明已启用本地识别")
 	}
 }
 

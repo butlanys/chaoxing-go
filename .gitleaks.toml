@@ -22,3 +22,12 @@ paths = [
   '''^\.gitguardian\.yaml$''',
   '''^scripts/scan_secrets\.py$''',
 ]
+
+# 交叉验证测试向量：用平台公开 AESKey 加密它自身得到的 base64 密文。
+# 它是**密文**而非密钥，且可由已公开的常量推导，不构成凭据泄露。
+# 用「路径 AND 该密文」双条件限定，避免整文件放开。
+[[allowlists]]
+description = "crypto 测试的跨语言交叉验证向量（密文，非凭据）"
+paths = ['''^internal/crypto/crypto_test\.go$''']
+regexes = ['''ulZQcVrOacDUDizP11W0E4FFPgELu/nYgZFwzeSLFj4=''']
+condition = "AND"

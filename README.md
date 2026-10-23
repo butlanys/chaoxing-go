@@ -22,6 +22,7 @@
 | 视频进度 | 支持倍速（1~2x）、随机上报间隔（30~90s）、`rt` 参数推导、403 自动恢复（刷新状态 / 重登 / 验证码通关） |
 | 章节检测 | 题库搜题 + 覆盖率阈值 + 提交/仅保存两种模式 + 答错后带错题反馈自动重做 |
 | 字体加密 | 自实现 TTF `glyf` 解析 + 字形哈希，破解超星 `cxSecretStyle` 加密题目（与原版算法逐字节一致） |
+| 验证码识别 | **纯 Go 实现 ddddocr 推理引擎，模型内嵌进二进制**，不依赖 onnxruntime / Python / 外部服务。394 张真实验证码上与 Python 版 ddddocr 准确率持平（60.4%），逐张一致率 99.5% |
 | 题库 | 言溪 / GO题 / LIKE知识库 / TikuAdapter / 任意 OpenAI 兼容大模型 / 硅基流动 / 手动输入 / 多题库顺序回退 |
 | 通知 | Server酱 / Qmsg酱 / Bark / Telegram |
 | 章节学习次数 | 可选在刷课后轮询章节累加学习次数（含 setlog 与 monitor 心跳） |
@@ -180,7 +181,10 @@ cover_rate = 0.9
 - 多账号并发调度（原版单账号）
 - Wails GUI 与账号持久化（原版无）
 - 命令行版的交互式课程选择保留，但手动答题改为回调注入（GUI 弹窗 / CLI 提示）
-- 验证码 OCR 从本地 `ddddocr`（Python 库）改为可配置的 HTTP OCR 服务；未配置时自动降级为跳过，不影响主流程
+- 验证码识别：**默认走内嵌的本地模型**（纯 Go 实现，与 Python 原版直接用本地 `ddddocr` 一致），
+  不依赖 onnxruntime / Python / 外部服务；显式配置 `ocr_url` 时可切换为 HTTP OCR 服务
+  （保留给需要集中式 OCR 的部署）。详见 [`docs/ocr-pure-go.md`](docs/ocr-pure-go.md)
+- 第三方组件与许可见 [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md)（内嵌的识别模型来自 MIT 许可的 ddddocr）
 - `notopen_action=ask` 在 GUI 下通过对话框询问（原版该分支实际等同 `retry`）
 - 配置读取对非法数值容错（回退默认值而非崩溃）
 - 通知发送失败会返回 error 给调用方（原版仅打日志）
