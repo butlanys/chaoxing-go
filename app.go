@@ -182,7 +182,7 @@ func (a *App) shutdown(ctx context.Context) {
 func (a *App) AppInfo() map[string]string {
 	return map[string]string{
 		"name":     "chaoxing-go",
-		"version":  "1.0.0",
+		"version":  "1.1.1",
 		"dataDir":  a.dataDir,
 		"config":   a.cfgPath,
 		"upstream": "https://github.com/Samueli924/chaoxing",

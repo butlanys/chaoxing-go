@@ -174,7 +174,7 @@ export const mock = {
   AppInfo(): Promise<AppInfo> {
     return delay({
       name: 'chaoxing-go',
-      version: '1.0.0 (mock)',
+      version: '1.1.1 (mock)',
       dataDir: '~/.chaoxing-go',
       config: '~/.chaoxing-go/config.ini',
       upstream: 'https://github.com/Samueli924/chaoxing',

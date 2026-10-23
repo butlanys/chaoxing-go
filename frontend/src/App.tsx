@@ -102,7 +102,7 @@ export default function App() {
           items={PAGES.map((p) => ({ key: p.key, icon: p.icon, label: p.label }))}
         />
         <div className="cx-sider-foot">
-          {collapsed ? `v${appInfo?.version ?? '1.0.0'}` : `版本 ${appInfo?.version ?? '1.0.0'} · GPL-3.0`}
+          {collapsed ? `v${appInfo?.version ?? '1.1.1'}` : `版本 ${appInfo?.version ?? '1.1.1'} · GPL-3.0`}
         </div>
       </Sider>
 

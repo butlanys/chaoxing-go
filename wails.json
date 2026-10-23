@@ -13,7 +13,7 @@
   "info": {
     "companyName": "chaoxing-go",
     "productName": "超星学习通助手",
-    "productVersion": "1.0.0",
+    "productVersion": "1.1.1",
     "copyright": "GPL-3.0",
     "comments": "超星学习通/超星尔雅/泛雅超星 全自动完成任务点 (Go 重写版, 多账号并发 + Wails GUI)"
   }
