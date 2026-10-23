@@ -68,12 +68,12 @@ export default function RunPage() {
     return {
       account_ids: ids,
       course_ids: courseIds,
-      speed: config.Common.Speed,
-      jobs: config.Common.Jobs,
-      notopen_action: config.Common.NotOpenAction,
-      retry_interval: config.Common.RetryInterval,
-      add_learning_count: config.Common.AddLearningCount,
-      target_count: config.Common.TargetCount,
+      speed: config.common.speed,
+      jobs: config.common.jobs,
+      notopen_action: config.common.notopen_action,
+      retry_interval: config.common.retry_interval,
+      add_learning_count: config.common.add_learning_count,
+      target_count: config.common.target_count,
     }
   }
 
@@ -250,16 +250,16 @@ export default function RunPage() {
 
         <div style={{ marginTop: 14 }}>
           <Descriptions size="small" column={4} bordered>
-            <Descriptions.Item label="倍速">{config.Common.Speed}x</Descriptions.Item>
-            <Descriptions.Item label="并发章节">{config.Common.Jobs}</Descriptions.Item>
+            <Descriptions.Item label="倍速">{config.common.speed}x</Descriptions.Item>
+            <Descriptions.Item label="并发章节">{config.common.jobs}</Descriptions.Item>
             <Descriptions.Item label="关闭章节动作">
-              {config.Common.NotOpenAction}
+              {config.common.notopen_action}
             </Descriptions.Item>
-            <Descriptions.Item label="重试间隔">{config.Common.RetryInterval}s</Descriptions.Item>
+            <Descriptions.Item label="重试间隔">{config.common.retry_interval}s</Descriptions.Item>
             <Descriptions.Item label="增加学习次数">
-              {config.Common.AddLearningCount ? '开启' : '关闭'}
+              {config.common.add_learning_count ? '开启' : '关闭'}
             </Descriptions.Item>
-            <Descriptions.Item label="目标次数">{config.Common.TargetCount}</Descriptions.Item>
+            <Descriptions.Item label="目标次数">{config.common.target_count}</Descriptions.Item>
             <Descriptions.Item label="选中账号">{enabledSelected.length}</Descriptions.Item>
             <Descriptions.Item label="任务参数来源">任务与配置页</Descriptions.Item>
           </Descriptions>

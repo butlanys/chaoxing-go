@@ -18,6 +18,7 @@ import {
   LoginResult,
   Progress,
   RunRequest,
+  normalizeConfig,
 } from './types'
 
 interface WailsApp {
@@ -171,9 +172,10 @@ export const bindings = {
   isRunning: (): Promise<boolean> => invoke('IsRunning'),
   getLogs: (limit: number): Promise<LogEntry[]> => invoke('GetLogs', limit),
   setLogLevel: (level: string): Promise<void> => invoke('SetLogLevel', level),
-  loadConfig: (): Promise<Config> => invoke('LoadConfig'),
+  loadConfig: async (): Promise<Config> => normalizeConfig(await invoke('LoadConfig')),
   saveConfig: (cfg: Config): Promise<void> => invoke('SaveConfig', cfg),
-  loadConfigFile: (path: string): Promise<Config> => invoke('LoadConfigFile', path),
+  loadConfigFile: async (path: string): Promise<Config> =>
+    normalizeConfig(await invoke('LoadConfigFile', path)),
   saveConfigAs: (path: string, cfg: Config): Promise<void> => invoke('SaveConfigAs', path, cfg),
   pickConfigFile: (): Promise<string> => invoke('PickConfigFile'),
   exportResults: (): Promise<string> => invoke('ExportResults'),

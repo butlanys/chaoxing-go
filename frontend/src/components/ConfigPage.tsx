@@ -29,7 +29,7 @@ import {
 } from '@ant-design/icons'
 import { bindings, errText } from '../bindings'
 import { useStore } from '../store'
-import { CommonConfig, Config, defaultConfig } from '../types'
+import { CommonConfig, Config, defaultConfig, normalizeConfig } from '../types'
 import { NOTIFY_PROVIDERS, NOT_OPEN_ACTIONS, TIKU_PROVIDERS, toNum, toStr } from '../utils'
 
 /** 有专属输入框的 tiku 键, 其余键走“自定义键值对”表格 */
@@ -62,11 +62,13 @@ function boolStr(v: unknown, def = false): boolean {
 }
 
 function cloneConfig(c: Config): Config {
+  // 先归一化: 后端 ini 缺节时 tiku/notification 会是 null, 直接展开会在渲染期抛错
+  const n = normalizeConfig(c)
   return {
-    Common: { ...c.Common, CourseList: [...(c.Common.CourseList ?? [])] },
-    Tiku: { ...c.Tiku },
-    Notification: { ...c.Notification },
-    Path: c.Path ?? '',
+    common: { ...n.common, course_list: [...n.common.course_list] },
+    tiku: { ...n.tiku },
+    notification: { ...n.notification },
+    path: n.path,
   }
 }
 
@@ -88,26 +90,26 @@ export default function ConfigPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config])
 
-  const common = draft.Common
-  const tiku = draft.Tiku
-  const notif = draft.Notification
+  const common = draft.common
+  const tiku = draft.tiku
+  const notif = draft.notification
 
   function patchCommon(patch: Partial<CommonConfig>) {
     setDirty(true)
-    setDraft((prev) => ({ ...prev, Common: { ...prev.Common, ...patch } }))
+    setDraft((prev) => ({ ...prev, common: { ...prev.common, ...patch } }))
   }
 
   function setTikuKey(key: string, value: string) {
     setDirty(true)
-    setDraft((prev) => ({ ...prev, Tiku: { ...prev.Tiku, [key]: value } }))
+    setDraft((prev) => ({ ...prev, tiku: { ...prev.tiku, [key]: value } }))
   }
 
   function removeTikuKey(key: string) {
     setDirty(true)
     setDraft((prev) => {
-      const next = { ...prev.Tiku }
+      const next = { ...prev.tiku }
       delete next[key]
-      return { ...prev, Tiku: next }
+      return { ...prev, tiku: next }
     })
   }
 
@@ -116,17 +118,17 @@ export default function ConfigPage() {
     if (!k || k === oldKey) return
     setDirty(true)
     setDraft((prev) => {
-      const next = { ...prev.Tiku }
+      const next = { ...prev.tiku }
       const val = next[oldKey] ?? ''
       delete next[oldKey]
       next[k] = val
-      return { ...prev, Tiku: next }
+      return { ...prev, tiku: next }
     })
   }
 
   function setNotifKey(key: string, value: string) {
     setDirty(true)
-    setDraft((prev) => ({ ...prev, Notification: { ...prev.Notification, [key]: value } }))
+    setDraft((prev) => ({ ...prev, notification: { ...prev.notification, [key]: value } }))
   }
 
   function addExtraKey() {
@@ -191,7 +193,7 @@ export default function ConfigPage() {
   }
 
   function openSaveAs() {
-    setSaveAsPath(draft.Path || '~/.chaoxing-go/config.ini')
+    setSaveAsPath(draft.path || '~/.chaoxing-go/config.ini')
     setSaveAsOpen(true)
   }
 
@@ -203,8 +205,8 @@ export default function ConfigPage() {
     }
     try {
       await bindings.saveConfigAs(path, cloneConfig(draft))
-      setDraft((prev) => ({ ...prev, Path: path }))
-      setConfig({ ...cloneConfig(draft), Path: path })
+      setDraft((prev) => ({ ...prev, path }))
+      setConfig({ ...cloneConfig(draft), path })
       setDirty(false)
       setSaveAsOpen(false)
       message.success(`配置已另存为: ${path}`)
@@ -215,7 +217,7 @@ export default function ConfigPage() {
 
   function resetDefault() {
     const def = defaultConfig()
-    def.Path = draft.Path
+    def.path = draft.path
     setDraft(def)
     setDirty(true)
     message.info('已恢复默认值, 记得点击“保存配置”生效')
@@ -279,7 +281,7 @@ export default function ConfigPage() {
         extra={
           <Space size={6}>
             {dirty && <Tag color="orange">有未保存的修改</Tag>}
-            <Tag color={draft.Path ? 'blue' : 'default'}>{draft.Path || '尚未指定路径'}</Tag>
+            <Tag color={draft.path ? 'blue' : 'default'}>{draft.path || '尚未指定路径'}</Tag>
           </Space>
         }
       >
@@ -314,30 +316,30 @@ export default function ConfigPage() {
             }}
           >
             <Form.Item label="默认使用 Cookie 登录">
-              <Switch checked={common.UseCookies} onChange={(v) => patchCommon({ UseCookies: v })} />
+              <Switch checked={common.use_cookies} onChange={(v) => patchCommon({ use_cookies: v })} />
             </Form.Item>
             <Form.Item label="默认手机号">
               <Input
-                value={common.Username}
+                value={common.username}
                 placeholder="CLI 模式使用的默认账号"
-                onChange={(e) => patchCommon({ Username: e.target.value })}
+                onChange={(e) => patchCommon({ username: e.target.value })}
               />
             </Form.Item>
             <Form.Item label="默认密码">
               <Input.Password
-                value={common.Password}
+                value={common.password}
                 placeholder="CLI 模式使用的默认密码"
                 autoComplete="new-password"
-                onChange={(e) => patchCommon({ Password: e.target.value })}
+                onChange={(e) => patchCommon({ password: e.target.value })}
               />
             </Form.Item>
             <Form.Item label="默认课程列表 (course_list)" tooltip="留空表示全部课程, 回车分隔">
               <Select
                 mode="tags"
-                value={common.CourseList}
+                value={common.course_list}
                 placeholder="不填则学习全部课程"
                 tokenSeparators={[',', ' ']}
-                onChange={(v) => patchCommon({ CourseList: v })}
+                onChange={(v) => patchCommon({ course_list: v })}
                 options={[]}
               />
             </Form.Item>
@@ -352,13 +354,13 @@ export default function ConfigPage() {
               columnGap: 16,
             }}
           >
-            <Form.Item label={`视频倍速 (speed): ${common.Speed.toFixed(1)}x`} tooltip="1 ~ 2 倍速">
+            <Form.Item label={`视频倍速 (speed): ${common.speed.toFixed(1)}x`} tooltip="1 ~ 2 倍速">
               <Slider
                 min={1}
                 max={2}
                 step={0.1}
-                value={toNum(common.Speed, 1)}
-                onChange={(v) => patchCommon({ Speed: v })}
+                value={toNum(common.speed, 1)}
+                onChange={(v) => patchCommon({ speed: v })}
                 marks={{ 1: '1x', 1.5: '1.5x', 2: '2x' }}
               />
             </Form.Item>
@@ -367,15 +369,15 @@ export default function ConfigPage() {
                 min={1}
                 max={32}
                 style={{ width: '100%' }}
-                value={common.Jobs}
-                onChange={(v) => patchCommon({ Jobs: toNum(v, 4) })}
+                value={common.jobs}
+                onChange={(v) => patchCommon({ jobs: toNum(v, 4) })}
               />
             </Form.Item>
             <Form.Item label="遇到关闭章节的动作 (notopen_action)">
               <Select
-                value={common.NotOpenAction}
+                value={common.notopen_action}
                 options={NOT_OPEN_ACTIONS}
-                onChange={(v) => patchCommon({ NotOpenAction: v })}
+                onChange={(v) => patchCommon({ notopen_action: v })}
               />
             </Form.Item>
             <Form.Item label="重试间隔 (retry_interval, 秒)">
@@ -384,14 +386,14 @@ export default function ConfigPage() {
                 max={120}
                 step={0.5}
                 style={{ width: '100%' }}
-                value={common.RetryInterval}
-                onChange={(v) => patchCommon({ RetryInterval: toNum(v, 1) })}
+                value={common.retry_interval}
+                onChange={(v) => patchCommon({ retry_interval: toNum(v, 1) })}
               />
             </Form.Item>
             <Form.Item label="章节检测答错后自动重做 (work_redo_enabled)">
               <Switch
-                checked={common.WorkRedoEnabled}
-                onChange={(v) => patchCommon({ WorkRedoEnabled: v })}
+                checked={common.work_redo_enabled}
+                onChange={(v) => patchCommon({ work_redo_enabled: v })}
               />
             </Form.Item>
             <Form.Item label="最大重做次数 (work_max_retries)">
@@ -399,14 +401,14 @@ export default function ConfigPage() {
                 min={1}
                 max={10}
                 style={{ width: '100%' }}
-                value={common.WorkMaxRetries}
-                onChange={(v) => patchCommon({ WorkMaxRetries: toNum(v, 3) })}
+                value={common.work_max_retries}
+                onChange={(v) => patchCommon({ work_max_retries: toNum(v, 3) })}
               />
             </Form.Item>
             <Form.Item label="刷完后增加章节学习次数 (add_learning_count)">
               <Switch
-                checked={common.AddLearningCount}
-                onChange={(v) => patchCommon({ AddLearningCount: v })}
+                checked={common.add_learning_count}
+                onChange={(v) => patchCommon({ add_learning_count: v })}
               />
             </Form.Item>
             <Form.Item label="目标学习次数 (target_count)">
@@ -414,9 +416,9 @@ export default function ConfigPage() {
                 min={1}
                 max={10000}
                 style={{ width: '100%' }}
-                value={common.TargetCount}
-                disabled={!common.AddLearningCount}
-                onChange={(v) => patchCommon({ TargetCount: toNum(v, 100) })}
+                value={common.target_count}
+                disabled={!common.add_learning_count}
+                onChange={(v) => patchCommon({ target_count: toNum(v, 100) })}
               />
             </Form.Item>
           </div>

@@ -13,6 +13,7 @@ import CoursePage from './components/CoursePage'
 import ConfigPage from './components/ConfigPage'
 import RunPage from './components/RunPage'
 import LogPage from './components/LogPage'
+import ErrorBoundary from './components/ErrorBoundary'
 import { useStore } from './store'
 
 const { Header, Sider, Content } = Layout
@@ -128,11 +129,14 @@ export default function App() {
         </Header>
 
         <Content className="cx-content">
-          {page === 'accounts' && <AccountPage />}
-          {page === 'courses' && <CoursePage />}
-          {page === 'config' && <ConfigPage />}
-          {page === 'run' && <RunPage />}
-          {page === 'logs' && <LogPage />}
+          {/* 每个页面独立包一层边界: 单页渲染异常不再拖垮整个窗口变成白页 */}
+          <ErrorBoundary key={page} area={meta.title}>
+            {page === 'accounts' && <AccountPage />}
+            {page === 'courses' && <CoursePage />}
+            {page === 'config' && <ConfigPage />}
+            {page === 'run' && <RunPage />}
+            {page === 'logs' && <LogPage />}
+          </ErrorBoundary>
         </Content>
       </Layout>
     </Layout>

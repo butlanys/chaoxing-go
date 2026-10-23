@@ -13,6 +13,7 @@ import {
   LogEntry,
   LogLevel,
   LoginResult,
+  normalizeConfig,
   Progress,
   ProgressState,
   RunRequest,
@@ -138,9 +139,9 @@ const courseTable: Record<string, Course[]> = {
 }
 
 let config: Config = defaultConfig()
-config.Common.Username = '13800000001'
-config.Common.Password = 'demo-pass-1'
-config.Path = '~/.chaoxing-go/config.ini'
+config.common.username = '13800000001'
+config.common.password = 'demo-pass-1'
+config.path = '~/.chaoxing-go/config.ini'
 
 const logs: LogEntry[] = []
 const statuses = new Map<string, Progress>()
@@ -391,7 +392,7 @@ export const mock = {
   LoadConfigFile(path: string): Promise<Config> {
     if (!path) return fail('路径为空')
     config = cloneConfig(config)
-    config.Path = path
+    config.path = path
     pushLog('info', '', `已载入配置文件: ${path} (mock)`)
     return delay(cloneConfig(config))
   },
@@ -399,7 +400,7 @@ export const mock = {
   SaveConfigAs(path: string, cfg: Config): Promise<void> {
     if (!path) return fail('路径为空')
     if (cfg) config = cloneConfig(cfg)
-    config.Path = path
+    config.path = path
     pushLog('info', '', `配置已另存为: ${path} (mock)`)
     return delay(undefined)
   },
@@ -430,11 +431,12 @@ function finishRun(myRun: number) {
 }
 
 function cloneConfig(c: Config): Config {
+  const n = normalizeConfig(c)
   return {
-    Common: { ...c.Common, CourseList: [...(c.Common.CourseList ?? [])] },
-    Tiku: { ...c.Tiku },
-    Notification: { ...c.Notification },
-    Path: c.Path,
+    common: { ...n.common, course_list: [...n.common.course_list] },
+    tiku: { ...n.tiku },
+    notification: { ...n.notification },
+    path: n.path,
   }
 }
 

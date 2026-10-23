@@ -1,5 +1,8 @@
 // 与 Go 侧 JSON tag 一一对应的数据结构。
-// 注意: Config 的 Go 字段名没有 json tag, 因此必须使用大写键名 Common / Tiku / Notification / Path。
+// 注意: Go 的 config.Config / config.Common 都带 json tag, 序列化后键名是
+// common / tiku / notification / path 以及 use_cookies / speed / ... 这样的 snake_case,
+// 因此这里必须用小写键名, 否则读到的全是 undefined (页面会因渲染期报错而全白)。
+// 详见 frontend/wailsjs/go/models.ts (Wails 生成的同一份结构)。
 
 /** AppInfo() 的返回值 */
 export interface AppInfo {
@@ -100,53 +103,53 @@ export interface LoginResult {
   realName: string
 }
 
-/** [common] 节 */
+/** [common] 节; 键名与 Go struct 的 json tag 完全一致 (snake_case) */
 export interface CommonConfig {
-  UseCookies: boolean
-  Username: string
-  Password: string
-  CourseList: string[]
-  Speed: number
-  Jobs: number
-  NotOpenAction: string
-  RetryInterval: number
-  WorkRedoEnabled: boolean
-  WorkMaxRetries: number
-  AddLearningCount: boolean
-  TargetCount: number
+  use_cookies: boolean
+  username: string
+  password: string
+  course_list: string[]
+  speed: number
+  jobs: number
+  notopen_action: string
+  retry_interval: number
+  work_redo_enabled: boolean
+  work_max_retries: number
+  add_learning_count: boolean
+  target_count: number
 }
 
-/** 完整配置; 键名与 Go 结构体字段名一致 (无 json tag) */
+/** 完整配置; 键名与 Go struct 的 json tag 一致 (common / tiku / notification / path) */
 export interface Config {
-  Common: CommonConfig
-  Tiku: Record<string, string>
-  Notification: Record<string, string>
-  Path: string
+  common: CommonConfig
+  tiku: Record<string, string>
+  notification: Record<string, string>
+  path: string
 }
 
 /** 运行参数默认值, 与 Python 版 config_template.ini 对齐 */
 export function defaultCommon(): CommonConfig {
   return {
-    UseCookies: false,
-    Username: '',
-    Password: '',
-    CourseList: [],
-    Speed: 1,
-    Jobs: 4,
-    NotOpenAction: 'retry',
-    RetryInterval: 1.0,
-    WorkRedoEnabled: false,
-    WorkMaxRetries: 3,
-    AddLearningCount: false,
-    TargetCount: 100,
+    use_cookies: false,
+    username: '',
+    password: '',
+    course_list: [],
+    speed: 1,
+    jobs: 4,
+    notopen_action: 'retry',
+    retry_interval: 1.0,
+    work_redo_enabled: false,
+    work_max_retries: 3,
+    add_learning_count: false,
+    target_count: 100,
   }
 }
 
 /** 构造一份默认配置 */
 export function defaultConfig(): Config {
   return {
-    Common: defaultCommon(),
-    Tiku: {
+    common: defaultCommon(),
+    tiku: {
       provider: 'TikuYanxi',
       check_llm_connection: 'true',
       submit: 'false',
@@ -165,8 +168,72 @@ export function defaultConfig(): Config {
       manual_mode_default: 'batch',
       manual_mode_separator: ';',
     },
-    Notification: { provider: '', url: '', tg_chat_id: '' },
-    Path: '',
+    notification: { provider: '', url: '', tg_chat_id: '' },
+    path: '',
+  }
+}
+
+function numOr(v: unknown, def: number): number {
+  const n = typeof v === 'number' ? v : Number(v)
+  return Number.isFinite(n) ? n : def
+}
+
+function strOr(v: unknown, def: string): string {
+  return typeof v === 'string' ? v : v == null ? def : String(v)
+}
+
+function boolOr(v: unknown, def: boolean): boolean {
+  if (typeof v === 'boolean') return v
+  if (typeof v === 'string') {
+    const s = v.trim().toLowerCase()
+    if (s === 'true' || s === '1' || s === 'yes' || s === 'y') return true
+    if (s === 'false' || s === '0' || s === 'no' || s === 'n') return false
+  }
+  if (typeof v === 'number') return v !== 0
+  return def
+}
+
+/** 把任意 ini 映射归一化成 Record<string, string>, null/undefined 安全 */
+function strMap(v: unknown): Record<string, string> {
+  if (!v || typeof v !== 'object') return {}
+  const out: Record<string, string> = {}
+  for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+    if (val == null) continue
+    out[k] = String(val)
+  }
+  return out
+}
+
+/**
+ * 把后端返回的配置归一化成完整的 Config。
+ *
+ * 为什么必须做这一步: Go 的 config.Config 里 common 是值类型, tiku/notification 是 map,
+ * 当 ini 缺节时 map 会是 nil 并被序列化成 JSON null; 而前端多处直接解引用
+ * (common.speed / Object.keys(tiku)), 一旦拿到 null 就会在渲染期抛错,
+ * 整棵 React 树被卸载 → 页面全白。所有后端入口统一过这个函数。
+ */
+export function normalizeConfig(raw: unknown): Config {
+  const r = (raw ?? {}) as Record<string, unknown>
+  const c = (r.common ?? {}) as Record<string, unknown>
+  const def = defaultCommon()
+  return {
+    common: {
+      use_cookies: boolOr(c.use_cookies, def.use_cookies),
+      username: strOr(c.username, ''),
+      password: strOr(c.password, ''),
+      course_list: Array.isArray(c.course_list) ? c.course_list.map((x) => String(x)) : [],
+      speed: numOr(c.speed, def.speed),
+      jobs: numOr(c.jobs, def.jobs),
+      notopen_action: strOr(c.notopen_action, def.notopen_action),
+      retry_interval: numOr(c.retry_interval, def.retry_interval),
+      work_redo_enabled: boolOr(c.work_redo_enabled, def.work_redo_enabled),
+      work_max_retries: numOr(c.work_max_retries, def.work_max_retries),
+      add_learning_count: boolOr(c.add_learning_count, def.add_learning_count),
+      target_count: numOr(c.target_count, def.target_count),
+    },
+    tiku: strMap(r.tiku),
+    notification: strMap(r.notification),
+    path: strOr(r.path, ''),
   }
 }
 
